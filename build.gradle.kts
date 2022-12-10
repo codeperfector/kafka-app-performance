@@ -14,13 +14,15 @@ repositories {
     mavenCentral()
 }
 
-val promClientVersion = "0.14.1"
+val promClientVersion = "0.16.0"
 
 dependencies {
     implementation("io.prometheus:simpleclient:$promClientVersion")
     implementation("io.prometheus:simpleclient_hotspot:$promClientVersion")
     implementation("io.prometheus:simpleclient_httpserver:$promClientVersion")
-    implementation("org.apache.kafka:kafka-clients:3.0.0")
+    implementation("org.apache.kafka:kafka-clients:3.3.1")
+    implementation("io.github.microutils:kotlin-logging-jvm:3.0.4")
+    implementation("ch.qos.logback:logback-classic:1.4.4")
     testImplementation(kotlin("test"))
 }
 

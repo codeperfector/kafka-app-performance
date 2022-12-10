@@ -1,0 +1,117 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: myapp-consumer
+spec:
+  selector:
+    app: myapp-consumer
+  ports:
+  - protocol: TCP
+    port: 8080
+    nodePort: 30001
+  type: NodePort
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: myapp-producer
+spec:
+  selector:
+    app: myapp-producer
+  ports:
+  - protocol: TCP
+    port: 8080
+    nodePort: 30002
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-producer
+spec:
+  selector:
+      matchLabels:
+        app: myapp-producer
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: myapp-producer
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/"
+        prometheus.io/port: "8080"
+    spec:
+      containers:
+        - name: myapp
+          image: myapp:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+          - name: MYAPP_PRODUCER
+            value: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-consumer
+spec:
+  selector:
+      matchLabels:
+        app: myapp-consumer
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: myapp-consumer
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/"
+        prometheus.io/port: "8080"
+    spec:
+      containers:
+        - name: myapp
+          image: myapp:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+          - name: MYAPP_PRODUCER
+            value: "false"
+---
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  annotations: {}
+  namespace: default
+  labels:
+    app: "myapp-consumer"
+  name: "myapp-consumer-headless-service"
+spec:
+  ports:
+  - name: "http-app"
+    port: 8080
+    protocol: "TCP"
+    targetPort: 8080
+  selector:
+    app: "myapp-consumer"
+  clusterIP: None
+---
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  annotations: {}
+  namespace: default
+  labels:
+    app: "myapp-producer"
+  name: "myapp-producer-headless-service"
+spec:
+  ports:
+  - name: "http-app"
+    port: 8080
+    protocol: "TCP"
+    targetPort: 8080
+  selector:
+    app: "myapp-consumer"
+  clusterIP: None

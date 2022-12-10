@@ -1,3 +1,10 @@
+import mu.KotlinLogging
+
+val logger = KotlinLogging.logger {}
+
+const val PRODUCTION_MESSAGES_BATCH_SIZE: Int = 500
+const val PRODUCTION_DELAY_MILLIS: Long = 10
+const val CONSUMPTION_DELAY_MILLIS: Long = 10
 
 fun main(args: Array<String>) {
 
@@ -12,10 +19,9 @@ fun main(args: Array<String>) {
         prometheusStart()
 
         if (System.getenv("MYAPP_PRODUCER") ?.toBoolean() == true) {
-            createProducer().produceMessages("test")
+            produceMessages(createProducer(), "test")
         } else {
-            createConsumer().consumeMessages("test")
-
+            consumeMessages(createConsumer(), "test")
         }
     } catch (e: Exception) {
         println("Exception: $e")

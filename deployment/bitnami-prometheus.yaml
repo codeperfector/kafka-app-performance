@@ -1,0 +1,14 @@
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'myapp-consumer'
+    scrape_interval: 5s
+    metrics_path: /
+    dns_sd_configs:
+    - names:
+      - '_http-app._tcp.myapp-consumer-headless-service.default.svc.cluster.local'
+  - job_name: 'myapp-producer'
+    scrape_interval: 5s
+    metrics_path: /
+    dns_sd_configs:
+    - names:
+      - '_http-app._tcp.myapp-producer-headless-service.default.svc.cluster.local'
