@@ -1,3 +1,3 @@
 
-rootProject.name = "kafka-consumer-throughput"
+rootProject.name = "kafka-consumer-performance"
 

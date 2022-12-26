@@ -10,11 +10,19 @@ import java.time.Duration
 import java.time.Instant
 import java.util.*
 
+val maxPollIntervalMillis = 10000
+
 val consumedMessages = Counter
     .build()
     .name("consumed_messages_per_partition")
     .labelNames("partition")
     .help("Counts all messages consumed from the topic per partition")
+    .register()
+
+val delayCounter = Counter
+    .build()
+    .name("delay_counter")
+    .help("Counts delays inserted intentionally into the consumer")
     .register()
 
 val rebalances = Counter
@@ -88,7 +96,7 @@ fun createConsumer(): Consumer<String, String> {
         "value.deserializer" to "org.apache.kafka.common.serialization.StringDeserializer",
         // The consumer should consume all messages in the poll in this period of time.
         // Otherwise the broker will remove it from the group and cause a rebalance.
-        "max.poll.interval.ms" to "10000",
+        "max.poll.interval.ms" to maxPollIntervalMillis.toString(),
         "max.poll.records" to "500"
     )
 
@@ -113,10 +121,13 @@ fun consumeMessages(consumer: Consumer<String, String>, topic: String) {
     while (true) {
 
         val now = Instant.now().epochSecond
-        if (now - startTime > 300) {
-            // 5 min past start time, add a random 1 min delay
-            if (Math.random() < 0.1) {
-                Thread.sleep(60000)
+        if (now - startTime > 900) {
+            // 15 min past start time, add a random delay greater than max poll interval
+            if (Math.random() < 0.001) {
+                delayCounter.inc()
+                Thread.sleep((maxPollIntervalMillis - 5000).toLong())
+                // Use the code below to produce rebalances
+                // Thread.sleep((maxPollIntervalMillis + 5000).toLong())
             }
         }
 
