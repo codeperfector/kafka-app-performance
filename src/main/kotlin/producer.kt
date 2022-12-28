@@ -3,12 +3,9 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
-import java.time.Duration
 import java.time.Instant
-import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.Future
-import kotlin.concurrent.fixedRateTimer
 
 val producedMessages = Counter.build()
     .name("produced_messages_per_partition")
@@ -59,7 +56,7 @@ fun produceMessages(producer: Producer<String, String>, topic: String) {
         recordMetadataFutures.add(producer.send(message))
 
         // Let's flush and record a batch of messages at a time
-        if (recordMetadataFutures.count() >= PRODUCTION_MESSAGES_BATCH_SIZE) {
+        if (recordMetadataFutures.count() >= chosenTestCase.producerBatchSize) {
 
             // This guarantees that the producer actually sent the messages up to this point.
             // However the producer is sending messages in the background and not waiting for a call to flush().
@@ -70,12 +67,12 @@ fun produceMessages(producer: Producer<String, String>, topic: String) {
                 .groupBy { it.partition() }
                 .forEach{ (partition, records) ->
                     producedMessages.labels(partition.toString()).inc(records.count().toDouble())
-                    logger.info("Produced messages partition=$partition, count=${records.count()}")
+                    logger.debug("Produced messages partition=$partition, count=${records.count()}")
                 }
             // Clear so that we don't record the same future again
             recordMetadataFutures.clear()
 
-            Thread.sleep(PRODUCTION_DELAY_MILLIS)
+            Thread.sleep(chosenTestCase.producerDelayMillis)
         }
     }
 }

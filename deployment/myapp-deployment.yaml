@@ -32,7 +32,7 @@ spec:
   selector:
       matchLabels:
         app: myapp-producer
-  replicas: 2
+  replicas: 5
   template:
     metadata:
       labels:

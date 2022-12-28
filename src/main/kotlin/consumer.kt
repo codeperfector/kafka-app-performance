@@ -10,7 +10,6 @@ import java.time.Duration
 import java.time.Instant
 import java.util.*
 
-val maxPollIntervalMillis = 10000
 
 val consumedMessages = Counter
     .build()
@@ -96,8 +95,8 @@ fun createConsumer(): Consumer<String, String> {
         "value.deserializer" to "org.apache.kafka.common.serialization.StringDeserializer",
         // The consumer should consume all messages in the poll in this period of time.
         // Otherwise the broker will remove it from the group and cause a rebalance.
-        "max.poll.interval.ms" to maxPollIntervalMillis.toString(),
-        "max.poll.records" to "500"
+        "max.poll.interval.ms" to chosenTestCase.consumerMaxPollIntervalMillis.toString(),
+        "max.poll.records" to chosenTestCase.consumerPollSize.toString()
     )
 
     val consumer = KafkaConsumer<String, String>(
@@ -120,14 +119,29 @@ fun consumeMessages(consumer: Consumer<String, String>, topic: String) {
     consumer.subscribe(listOf(topic), rebalanceListener)
     while (true) {
 
-        val now = Instant.now().epochSecond
-        if (now - startTime > 900) {
-            // 15 min past start time, add a random delay greater than max poll interval
-            if (Math.random() < 0.001) {
-                delayCounter.inc()
-                Thread.sleep((maxPollIntervalMillis - 5000).toLong())
-                // Use the code below to produce rebalances
-                // Thread.sleep((maxPollIntervalMillis + 5000).toLong())
+        if (chosenTestCase.consumerAdditionalDelayType != ConsumerAdditionalDelayType.None) {
+            val now = Instant.now().epochSecond
+            val elapsedTime = now - startTime
+            logger.debug("elapsed time = $elapsedTime")
+            if (elapsedTime > chosenTestCase.consumerAdditionalDelayQuietPeriod &&
+                if (chosenTestCase.consumerAdditionalDelayActivePeriod < Long.MAX_VALUE) {
+                    elapsedTime < (chosenTestCase.consumerAdditionalDelayQuietPeriod
+                            + chosenTestCase.consumerAdditionalDelayActivePeriod)
+                } else true
+            ) {
+                logger.debug("elapsed time within active period")
+                if (Math.random() < chosenTestCase.consumerAdditionalDelayPercentage/100.0) {
+                    logger.debug("adding additional delay")
+                    delayCounter.inc()
+                    val delaySign = when (chosenTestCase.consumerAdditionalDelayType) {
+                        ConsumerAdditionalDelayType.Small -> -1
+                        ConsumerAdditionalDelayType.Large -> +1
+                        else -> 0
+                    }
+                    val delay = chosenTestCase.consumerMaxPollIntervalMillis + delaySign * 1000
+                    logger.debug("delay = $delay")
+                    Thread.sleep(delay)
+                }
             }
         }
 
@@ -140,22 +154,23 @@ fun consumeMessages(consumer: Consumer<String, String>, topic: String) {
             if (messages.isEmpty) {
                 // This may happen for various reasons internal to the consumer as part of the fetch protocol especially during rebalances.
                 // The correct thing to do here is to return back to the poll immediately.
-                logger.info("poll size: 0")
+                logger.debug("poll size: 0")
             } else {
                 pollSize.set(messages.count().toDouble())
-                logger.info("poll size: ${messages.count()}")
+                logger.debug("poll size: ${messages.count()}")
                 messages
                     .groupBy { it.partition() }
                     .forEach { (partition, records) ->
                         records.forEach {
                             val msgTimestamp = it.timestamp()
-                            messageLatency.labels(partition.toString()).observe((Instant.now().epochSecond - msgTimestamp).toDouble())
+                            messageLatency.labels(partition.toString())
+                                .observe((Instant.now().epochSecond - msgTimestamp).toDouble())
                         }
                         consumedMessages.labels(partition.toString()).inc(records.count().toDouble())
-                        logger.info("Consumed messages partition=$partition, count=${records.count()}")
+                        logger.debug("Consumed messages partition=$partition, count=${records.count()}")
                     }
                 consumer.commitSync()
-                Thread.sleep(CONSUMPTION_DELAY_MILLIS)
+                Thread.sleep(chosenTestCase.consumerConstantDelayMillis)
             }
         }
     }
@@ -169,7 +184,7 @@ private fun updateLagMetrics(consumer: Consumer<String, String>) {
         .mapNotNull { topicPartition -> topicPartition.partition() to consumer.currentLag(topicPartition) }
         .forEach { (partition, lag) ->
             lag.ifPresent {
-                //logger.info("partition=$partition, lag=${lag.asLong}")
+                //logger.debug("partition=$partition, lag=${lag.asLong}")
                 lagPerPartition
                     .labels(partition.toString())
                     .set(it.toDouble())

@@ -1031,8 +1031,8 @@
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         }
       },
       "targets": [
@@ -1310,8 +1310,8 @@
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         }
       },
       "targets": [
@@ -1829,6 +1829,6 @@
   "timezone": "utc",
   "title": "Myapp Dashboard",
   "uid": "_AgnRCdVz",
-  "version": 3,
+  "version": 4,
   "weekStart": ""
 }
