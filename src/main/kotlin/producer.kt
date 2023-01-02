@@ -27,6 +27,13 @@ fun createProducer(): Producer<String, String> {
     return KafkaProducer(props)
 }
 
+var currentKey = 0
+val maxKeys = 5
+fun getLowGranularityKey(): String {
+    currentKey = (currentKey++) % maxKeys
+    return currentKey.toString()
+}
+
 fun produceMessages(producer: Producer<String, String>, topic: String) {
     val recordMetadataFutures = mutableListOf<Future<RecordMetadata>>();
     while (true) {
@@ -43,7 +50,11 @@ fun produceMessages(producer: Producer<String, String>, topic: String) {
         // different partitions. You must be cognizant of this issue if you choose to increase the
         // partition count in the broker to achieve more parallelism. Unless necessary, you must almost never change
         // the partition count in the broker.
-        val key = time.epochSecond.toString()
+        val key = when(selectedScenario.producerKeyType){
+            ProducerKeyType.NotKeyed -> null
+            ProducerKeyType.LowGranularity -> getLowGranularityKey()
+            ProducerKeyType.HighGranularity -> time.epochSecond.toString()
+        }
 
         val message = ProducerRecord(
             topic, // topic
@@ -56,7 +67,7 @@ fun produceMessages(producer: Producer<String, String>, topic: String) {
         recordMetadataFutures.add(producer.send(message))
 
         // Let's flush and record a batch of messages at a time
-        if (recordMetadataFutures.count() >= chosenTestCase.producerBatchSize) {
+        if (recordMetadataFutures.count() >= selectedScenario.producerBatchSize) {
 
             // This guarantees that the producer actually sent the messages up to this point.
             // However the producer is sending messages in the background and not waiting for a call to flush().
@@ -72,7 +83,7 @@ fun produceMessages(producer: Producer<String, String>, topic: String) {
             // Clear so that we don't record the same future again
             recordMetadataFutures.clear()
 
-            Thread.sleep(chosenTestCase.producerDelayMillis)
+            Thread.sleep(selectedScenario.producerDelayMillis)
         }
     }
 }

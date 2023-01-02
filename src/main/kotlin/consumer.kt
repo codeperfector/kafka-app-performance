@@ -30,17 +30,22 @@ val rebalances = Counter
     .help("Counts rebalances")
     .register()
 
-val pollSize = Gauge
-    .build()
-    .name("poll_size")
-    .help("Number of messages in the poll, excluding zero polls")
-    .register()
-
 val lagPerPartition = Gauge
     .build()
     .name("lag_per_partition")
     .labelNames("partition")
     .help("Lag from the Kafka Client per partition")
+    .register()
+
+// Using a summary since we want to know what poll size distribution actually looks like
+val pollSize = Summary
+    .build()
+    .name("poll_size")
+    .help("Number of messages in the poll, excluding zero polls")
+    .quantile(0.0, 0.0) // min
+    .quantile(0.5, 0.01) // median
+    .quantile(0.95, 0.005) // 95th quantile
+    .quantile(1.0, 0.0) // max
     .register()
 
 // Using a summary because latency is unbounded so histogram buckets can be wildly inaccurate.
@@ -95,8 +100,9 @@ fun createConsumer(): Consumer<String, String> {
         "value.deserializer" to "org.apache.kafka.common.serialization.StringDeserializer",
         // The consumer should consume all messages in the poll in this period of time.
         // Otherwise the broker will remove it from the group and cause a rebalance.
-        "max.poll.interval.ms" to chosenTestCase.consumerMaxPollIntervalMillis.toString(),
-        "max.poll.records" to chosenTestCase.consumerPollSize.toString()
+        "max.poll.interval.ms" to selectedScenario.consumerMaxPollIntervalMillis.toString(),
+        "max.poll.records" to selectedScenario.consumerPollSize.toString(),
+        "partition.assignment.strategy" to selectedScenario.consumerPartitionAssignment
     )
 
     val consumer = KafkaConsumer<String, String>(
@@ -119,26 +125,26 @@ fun consumeMessages(consumer: Consumer<String, String>, topic: String) {
     consumer.subscribe(listOf(topic), rebalanceListener)
     while (true) {
 
-        if (chosenTestCase.consumerAdditionalDelayType != ConsumerAdditionalDelayType.None) {
+        if (selectedScenario.consumerAdditionalDelayType != ConsumerAdditionalDelayType.None) {
             val now = Instant.now().epochSecond
             val elapsedTime = now - startTime
             logger.debug("elapsed time = $elapsedTime")
-            if (elapsedTime > chosenTestCase.consumerAdditionalDelayQuietPeriod &&
-                if (chosenTestCase.consumerAdditionalDelayActivePeriod < Long.MAX_VALUE) {
-                    elapsedTime < (chosenTestCase.consumerAdditionalDelayQuietPeriod
-                            + chosenTestCase.consumerAdditionalDelayActivePeriod)
+            if (elapsedTime > selectedScenario.consumerAdditionalDelayQuietPeriod &&
+                if (selectedScenario.consumerAdditionalDelayActivePeriod < Long.MAX_VALUE) {
+                    elapsedTime < (selectedScenario.consumerAdditionalDelayQuietPeriod
+                            + selectedScenario.consumerAdditionalDelayActivePeriod)
                 } else true
             ) {
                 logger.debug("elapsed time within active period")
-                if (Math.random() < chosenTestCase.consumerAdditionalDelayPercentage/100.0) {
+                if (Math.random() < selectedScenario.consumerAdditionalDelayPercentage/100.0) {
                     logger.debug("adding additional delay")
                     delayCounter.inc()
-                    val delaySign = when (chosenTestCase.consumerAdditionalDelayType) {
+                    val delaySign = when (selectedScenario.consumerAdditionalDelayType) {
                         ConsumerAdditionalDelayType.Small -> -1
                         ConsumerAdditionalDelayType.Large -> +1
                         else -> 0
                     }
-                    val delay = chosenTestCase.consumerMaxPollIntervalMillis + delaySign * 1000
+                    val delay = selectedScenario.consumerMaxPollIntervalMillis + delaySign * 1000
                     logger.debug("delay = $delay")
                     Thread.sleep(delay)
                 }
@@ -156,7 +162,7 @@ fun consumeMessages(consumer: Consumer<String, String>, topic: String) {
                 // The correct thing to do here is to return back to the poll immediately.
                 logger.debug("poll size: 0")
             } else {
-                pollSize.set(messages.count().toDouble())
+                pollSize.observe(messages.count().toDouble())
                 logger.debug("poll size: ${messages.count()}")
                 messages
                     .groupBy { it.partition() }
@@ -170,7 +176,7 @@ fun consumeMessages(consumer: Consumer<String, String>, topic: String) {
                         logger.debug("Consumed messages partition=$partition, count=${records.count()}")
                     }
                 consumer.commitSync()
-                Thread.sleep(chosenTestCase.consumerConstantDelayMillis)
+                Thread.sleep(selectedScenario.consumerConstantDelayMillis)
             }
         }
     }
