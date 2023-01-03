@@ -2,7 +2,7 @@
 I struggled a bit to find good resources online to setup a simple kafka producer and consumer in minikube with prometheus metrics. That last part was pretty hard because setting up prometheus can be really challenging as there are so many knobs. Eventually I found a way to set things up without diving too deep into prometheus giving me what I need. I intend to use this demo project to explore kafka throughput related concerns, examining details with prometheus metrics.
 
 This project uses the following infrastructure to setup a basic Kubernetes Cluster with Helm installed to make it easier to run apps: 
- - minikube v1.24.0
+ - [minikube v1.24.0](https://minikube.sigs.k8s.io/docs/start/)
  - Docker Runtime Client and Server - version 20.10 (Not Docker Desktop!)
  - Helm 3
 
