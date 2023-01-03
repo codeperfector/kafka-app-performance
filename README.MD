@@ -14,6 +14,7 @@ We will additionally use the following for our project:
  - Kotlin JVM 1.6.0
  - Shadow plugin from com.github.johnrengelman.shadow to create uberjars for the docker image
 
+Optionally you can use [k9s](https://k9scli.io/topics/install/) to easily manage your k8s cluster.
 
 ## Setting up the minikube environment
 
