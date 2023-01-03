@@ -15,8 +15,11 @@ minikube config set memory 6g
 # removes cluster and resources from hyperkit:
 minikube delete
 
-# start minikube k8s cluster:
-minikube start --driver=hyperkit --container-runtime=docker
+# If you have docker desktop installed this should start just fine.
+minikube start
+
+# If using hyperkit driver and docker runtime without docker desktop, specify driver and container runtime:
+# minikube start --driver=hyperkit --container-runtime=docker
 
 # To point your shell to minikube's docker-daemon, run:
 eval $(minikube -p minikube docker-env)
