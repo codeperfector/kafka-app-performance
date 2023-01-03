@@ -1,10 +1,12 @@
 # Demo project for Kafka Consumer Throughput
-I struggled a bit to find good resources online to setup a simple kafka producer and consumer in minikube with prometheus metrics. That last part was pretty hard because setting up prometheus can be really challenging as there are so many knobs. Eventually I found a way to set things up without diving too deep into prometheus giving me what I need. I intend to use this demo project to explore kafka throughput related concerns, examining details with prometheus metrics.
+This is an example project intended to be used as a demo to explore kafka throughput related concerns, examining details with prometheus metrics. I struggled a bit to find good resources online to setup a simple kafka producer and consumer in minikube with prometheus metrics. Setting up prometheus can be really challenging as there are so many knobs. Eventually I found a way to set things up without diving too deep into prometheus giving me what I need. 
 
-This project uses the following infrastructure to setup a basic Kubernetes Cluster with Helm installed to make it easier to run apps: 
+This project can be run on an Apple MacBook Pro using either M1 ARM architecture or the Intel architecture. You may be able to run it on other platforms but I have not tried anything else. It uses the following infrastructure to setup a basic Kubernetes Cluster with Helm installed to make it easier to run apps: 
  - [minikube v1.24.0](https://minikube.sigs.k8s.io/docs/start/)
- - Docker Runtime Client and Server - version 20.10 (Not Docker Desktop!)
- - Helm 3
+ - [Docker Desktop](https://docs.docker.com/desktop/install/mac-install/)
+ - [Helm 3](https://helm.sh/docs/intro/install/)
+
+Minikube will use Docker Desktop if you have that installed already. If you cannot use Docker desktop you can install Hyperkit driver on Intel architecture and use Docker Runtime Client and Server (I have used version 20.10). There are several other options to run minikube depending on what platform you are on.
 
 We will additionally use the following for our project:
  - Bitnami Kafka Helm Chart (Kafka 2.8.1) 
