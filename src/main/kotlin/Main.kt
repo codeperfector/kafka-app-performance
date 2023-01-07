@@ -2,7 +2,7 @@ import mu.KotlinLogging
 import org.apache.kafka.clients.consumer.ConsumerPartitionAssignor
 
 val logger = KotlinLogging.logger {}
-val selectedScenario = Scenarios.Normal
+val selectedScenario = Scenarios.Rebalancing
 
 enum class ProducerKeyType {
     NotKeyed, LowGranularity, HighGranularity
@@ -15,6 +15,9 @@ enum class ConsumerAdditionalDelayType {
 
 const val CONSUMER_PARTITION_ASSIGNMENT_DEFAULT = "org.apache.kafka.clients.consumer.RangeAssignor"
 const val CONSUMER_PARTITION_ASSIGNMENT_COOPERATIVE = "org.apache.kafka.clients.consumer.CooperativeStickyAssignor"
+
+private const val PRODUCER_CONSTANT_DELAY_MILLIS: Long = 50
+private const val CONSUMER_CONSTANT_DELAY_MILLIS: Long = 10
 
 // consumerConstantDelayMillis is a constant delay inserted into the consumer poll loop.
 // consumerAdditionalDelayType specifies how much additional delay is inserted per poll. Large additional delay triggers rebalances.
@@ -34,19 +37,19 @@ enum class Scenarios(val description: String,
                      val consumerAdditionalDelayPercentage: Double,
                      val consumerAdditionalDelayType: ConsumerAdditionalDelayType) {
     Normal("Consumption rate matches producer rate, no rebalances expected.",
-        500, ProducerKeyType.HighGranularity, CONSUMER_PARTITION_ASSIGNMENT_DEFAULT, 500, 10, 10000, 10, 0, Long.MAX_VALUE, 0.0, ConsumerAdditionalDelayType.None),
+        500, ProducerKeyType.HighGranularity, CONSUMER_PARTITION_ASSIGNMENT_DEFAULT, 500, PRODUCER_CONSTANT_DELAY_MILLIS, 10000, CONSUMER_CONSTANT_DELAY_MILLIS, 0, Long.MAX_VALUE, 0.0, ConsumerAdditionalDelayType.None),
     Rebalancing("Consumers have additional delay greater than max poll interval inserted after the first 15 minutes causing them to rebalance frequently.",
-        500, ProducerKeyType.HighGranularity, CONSUMER_PARTITION_ASSIGNMENT_DEFAULT, 500, 10, 10000, 10, 60, Long.MAX_VALUE, 1.0, ConsumerAdditionalDelayType.Large),
+        500, ProducerKeyType.HighGranularity, CONSUMER_PARTITION_ASSIGNMENT_DEFAULT, 500, PRODUCER_CONSTANT_DELAY_MILLIS, 10000, CONSUMER_CONSTANT_DELAY_MILLIS, 60, Long.MAX_VALUE, 1.0, ConsumerAdditionalDelayType.Large),
     RebalancingCooperative("Same as Rebalancing scenario but with Cooperative Sticky Assignment.",
-        500, ProducerKeyType.HighGranularity, CONSUMER_PARTITION_ASSIGNMENT_COOPERATIVE, 500, 10, 10000, 10, 60, Long.MAX_VALUE, 1.0, ConsumerAdditionalDelayType.Large),
+        500, ProducerKeyType.HighGranularity, CONSUMER_PARTITION_ASSIGNMENT_COOPERATIVE, 500, PRODUCER_CONSTANT_DELAY_MILLIS, 10000, CONSUMER_CONSTANT_DELAY_MILLIS, 60, Long.MAX_VALUE, 1.0, ConsumerAdditionalDelayType.Large),
     DelayedNoRebalancing("Consumers have a delay smaller than max poll interval inserted after the first 15 minutes causing them to slow down but not rebalance.",
-        500, ProducerKeyType.HighGranularity, CONSUMER_PARTITION_ASSIGNMENT_DEFAULT, 500, 10, 10000, 10, 60, Long.MAX_VALUE, 1.0, ConsumerAdditionalDelayType.Small),
+        500, ProducerKeyType.HighGranularity, CONSUMER_PARTITION_ASSIGNMENT_DEFAULT, 500, PRODUCER_CONSTANT_DELAY_MILLIS, 10000, CONSUMER_CONSTANT_DELAY_MILLIS, 60, Long.MAX_VALUE, 1.0, ConsumerAdditionalDelayType.Small),
     LowConsumptionThenHigh("Consumers run slow for the first 15 minutes and then back to normal",
-        500, ProducerKeyType.HighGranularity, CONSUMER_PARTITION_ASSIGNMENT_DEFAULT, 10000, 0, 10000, 10, 0, 300, 100.0, ConsumerAdditionalDelayType.Small),
+        500, ProducerKeyType.HighGranularity, CONSUMER_PARTITION_ASSIGNMENT_DEFAULT, 10000, PRODUCER_CONSTANT_DELAY_MILLIS, 10000, CONSUMER_CONSTANT_DELAY_MILLIS, 0, 300, 100.0, ConsumerAdditionalDelayType.Small),
     NotKeyed("Consumption rate matches producer rate, no rebalances expected, no producer keys.",
-        500, ProducerKeyType.NotKeyed, CONSUMER_PARTITION_ASSIGNMENT_DEFAULT, 500, 10, 10000, 10, 0, Long.MAX_VALUE, 0.0, ConsumerAdditionalDelayType.None),
+        500, ProducerKeyType.NotKeyed, CONSUMER_PARTITION_ASSIGNMENT_DEFAULT, 500, PRODUCER_CONSTANT_DELAY_MILLIS, 10000, CONSUMER_CONSTANT_DELAY_MILLIS, 0, Long.MAX_VALUE, 0.0, ConsumerAdditionalDelayType.None),
     LowGranularityKeys("Consumption rate matches producer rate, no rebalances expected, low granularity producer keys.",
-        500, ProducerKeyType.LowGranularity, CONSUMER_PARTITION_ASSIGNMENT_DEFAULT, 500, 10, 10000, 10, 0, Long.MAX_VALUE, 0.0, ConsumerAdditionalDelayType.None),
+        500, ProducerKeyType.LowGranularity, CONSUMER_PARTITION_ASSIGNMENT_DEFAULT, 500, PRODUCER_CONSTANT_DELAY_MILLIS, 10000, CONSUMER_CONSTANT_DELAY_MILLIS, 0, Long.MAX_VALUE, 0.0, ConsumerAdditionalDelayType.None),
 }
 
 fun main(args: Array<String>) {
