@@ -1,5 +1,5 @@
-# NOTE: This file is used to build local container images for development only. Do not get overzealous and use it in production.
-FROM azul/zulu-openjdk:17.0.0
+# NOTE: This file is used to build local container images for testing only.
+FROM azul/zulu-openjdk:19.0.2-19.32.13
 
 COPY build/libs/kafka-consumer-performance-*-all.jar /app/app.jar
 
