@@ -2,7 +2,7 @@ allowPlaintextListener: true
 listenerSecurityProtocolMap: 'CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT'
 listeners: ['CLIENT://:9092','EXTERNAL://:9094']
 # *************** NOTE: The minikube ip address is used here directly. Substitute with your minikube ip or else this will not work! ***************
-advertisedListeners: ['CLIENT://kafka-0.kafka-headless.default.svc.cluster.local:9092','EXTERNAL://192.168.64.5:30100']
+advertisedListeners: ['CLIENT://kafka-0.kafka-headless.default.svc.cluster.local:9092','EXTERNAL://192.168.49.2:30100']
 interBrokerListenerName: CLIENT
 numPartitions: 10
 externalAccess:

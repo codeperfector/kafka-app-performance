@@ -2,7 +2,8 @@ import mu.KotlinLogging
 import org.apache.kafka.clients.consumer.ConsumerPartitionAssignor
 
 val logger = KotlinLogging.logger {}
-val selectedScenario = Scenarios.Rebalancing
+
+val selectedScenario = Scenarios.Normal
 
 enum class ProducerKeyType {
     NotKeyed, LowGranularity, HighGranularity
@@ -16,7 +17,7 @@ enum class ConsumerAdditionalDelayType {
 const val CONSUMER_PARTITION_ASSIGNMENT_DEFAULT = "org.apache.kafka.clients.consumer.RangeAssignor"
 const val CONSUMER_PARTITION_ASSIGNMENT_COOPERATIVE = "org.apache.kafka.clients.consumer.CooperativeStickyAssignor"
 
-private const val PRODUCER_CONSTANT_DELAY_MILLIS: Long = 50
+private const val PRODUCER_CONSTANT_DELAY_MILLIS: Long = 100
 private const val CONSUMER_CONSTANT_DELAY_MILLIS: Long = 10
 
 // consumerConstantDelayMillis is a constant delay inserted into the consumer poll loop.
@@ -60,17 +61,16 @@ fun main(args: Array<String>) {
 
     logger.info("Test scenario: ${selectedScenario.name} - ${selectedScenario.description}")
 
-    val allEnvs = System.getenv()
-    allEnvs.forEach { (k, v) -> println("$k => $v") }
+    printEnvVars()
 
     try {
         prometheusStart()
 
         if (System.getenv("MYAPP_PRODUCER")?.toBoolean() == true) {
-            logger.info("Starting producer")
+            logger.info("Running as producer")
             produceMessages(createProducer(), "test")
         } else {
-            logger.info("Starting consumer")
+            logger.info("Running as consumer")
             consumeMessages(createConsumer(), "test")
         }
     } catch (e: Exception) {
@@ -78,4 +78,9 @@ fun main(args: Array<String>) {
         e.printStackTrace()
         System.exit(1)
     }
+}
+
+private fun printEnvVars() {
+    val allEnvs = System.getenv()
+    allEnvs.forEach { (k, v) -> println("$k => $v") }
 }
