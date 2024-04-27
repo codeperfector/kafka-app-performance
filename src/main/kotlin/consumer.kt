@@ -95,7 +95,7 @@ fun createConsumer(): Consumer<String, String> {
     val props = mapOf(
         "bootstrap.servers" to "kafka-0.kafka-headless.default.svc.cluster.local:9092",
         "group.id" to "test",
-        "enable.auto.commit" to "false",
+        "enable.auto.commit" to selectedScenario.consumerAutoCommit.toString(),
         "key.deserializer" to "org.apache.kafka.common.serialization.StringDeserializer",
         "value.deserializer" to "org.apache.kafka.common.serialization.StringDeserializer",
         // The consumer should consume all messages in the poll in this period of time.

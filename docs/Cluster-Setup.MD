@@ -1,5 +1,5 @@
 # Setup
-For an overiew of this project see [README.MD](README.MD)
+For an overiew of this project and to see how to get setup with the dashboard see [README.MD](../README.MD)
 
 This project can be run on an Apple MacBook Pro using either M1 ARM architecture or the Intel architecture. You may be able to run it on other platforms but I have not tried anything else. It uses the following infrastructure to setup a basic Kubernetes Cluster with Helm installed to make it easier to run apps: 
  - [minikube v1.24.0](https://minikube.sigs.k8s.io/docs/start/)
@@ -32,9 +32,12 @@ When you make code changes you can trigger rebuild and redeployment using anothe
 ```
 If you want to stop minikube to pause your work (minikube takes a lot of resources on your machine):
 ```
-./deployment/stop-clusters.sh
+./deployment/stop-cluster.sh
 ```
 To resume you can use the start-cluster script in the same folder.
+```
+./deployment/start-cluster.sh
+```
 
 If you would like to perform manual steps continue with the rest of this guide.
 
@@ -173,6 +176,11 @@ kubectl get pods
 View pod logs 
 ```
 kubectl logs << your app name >> --follow
+```
+
+You can also use the k9s tool (install it separately) to view your pod logs or just launch the minikube dashboard where you can also see your pod logs.
+```
+minikube dashboard
 ```
 
 We're all set with our producer and consumer pods.
